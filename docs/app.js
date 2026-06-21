@@ -1,7 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js';
 import {
   getFirestore, collection, doc, setDoc, addDoc, deleteDoc,
-  query, where, onSnapshot, serverTimestamp, documentId
+  query, where, onSnapshot, serverTimestamp, documentId, getDoc, getDocs
 } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js';
 
 // ── Firebase config ──────────────────────────────────────
@@ -55,6 +55,23 @@ const addPayment    = p => addDoc(collection(db, 'payments'), p);
 const removePayment = id => deleteDoc(doc(db, 'payments', id));
 const saveSetting   = s => setDoc(doc(db, 'monthSettings', s.month), s);
 
+async function autoSetOpeningBalance(month) {
+  const prev = shiftMonth(month, -1);
+  try {
+    const [setSnap, paySnap, logSnap] = await Promise.all([
+      getDoc(doc(db, 'monthSettings', prev)),
+      getDocs(query(collection(db, 'payments'), where('month', '==', prev))),
+      getDocs(query(collection(db, 'dailyLogs'),
+        where(documentId(), '>=', prev+'-01'),
+        where(documentId(), '<=', prev+'-31')))
+    ]);
+    const ob      = setSnap.exists() ? (setSnap.data().openingBalance ?? 0) : 0;
+    const credits = paySnap.docs.reduce((s, d) => s + (d.data().amount || 0), 0);
+    const cups    = logSnap.docs.reduce((s, d) => s + (d.data().count  || 0), 0);
+    await saveSetting({ month, openingBalance: ob + credits - cups * 20, teaPrice: 20 });
+  } catch (e) { console.error('autoSetOpeningBalance', e); }
+}
+
 // ── State ────────────────────────────────────────────────
 const NOW      = new Date();
 const TODAY    = toYMD(NOW);
@@ -97,7 +114,11 @@ function startHome(month) {
   homeSubs.push(
     onSnapshot(q1, snap => { S.logs = snap.docs.map(d => ({date: d.id, ...d.data()})); renderHome(); }),
     onSnapshot(q2, snap => { S.payments = snap.docs.map(d => ({id: d.id, ...d.data()})); renderHome(); }),
-    onSnapshot(q3, snap => { S.setting = snap.exists() ? snap.data() : null; renderHome(); })
+    onSnapshot(q3, snap => {
+      if (!snap.exists() && month >= CUR_MON) autoSetOpeningBalance(month);
+      S.setting = snap.exists() ? snap.data() : null;
+      renderHome();
+    })
   );
 }
 
