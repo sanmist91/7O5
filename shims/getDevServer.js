@@ -1,24 +1,22 @@
 // Shim: RN 0.77 exports getDevServer as module.exports = fn (no .default),
 // but @expo/metro-runtime calls require(...).default. This adds .default.
-const NativeSourceCode = require('react-native/Libraries/NativeModules/specs/NativeSourceCode');
-
-let _cachedUrl;
+// In Expo Go, the bundle is always loaded from a server, so we return true.
 const FALLBACK = 'http://localhost:8081/';
 
 function getDevServer() {
-  if (_cachedUrl === undefined) {
-    try {
-      const scriptUrl = NativeSourceCode.getConstants().scriptURL;
-      const match = scriptUrl.match(/^https?:\/\/.*?\//);
-      _cachedUrl = match ? match[0] : null;
-    } catch (_e) {
-      _cachedUrl = null;
-    }
+  let url = FALLBACK;
+  try {
+    const NativeSourceCode = require('react-native/Libraries/NativeModules/specs/NativeSourceCode');
+    const scriptUrl = NativeSourceCode.getConstants().scriptURL;
+    const match = scriptUrl.match(/^(https?|exp):\/\/[^/]+\//);
+    if (match) url = match[0].replace(/^exp:/, 'http:');
+  } catch (_e) {
+    // ignore — fallback to localhost
   }
   return {
-    url: _cachedUrl ?? FALLBACK,
+    url,
     fullBundleUrl: null,
-    bundleLoadedFromServer: _cachedUrl !== null,
+    bundleLoadedFromServer: true,
   };
 }
 
