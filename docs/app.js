@@ -145,7 +145,7 @@ function renderHome() {
         <button class="cnt-btn" onclick="stepCups(-0.5)" ${cups===0||S.saving?'disabled':''}>−</button>
         <div onclick="editTodayCups()" class="cnt-tap" title="Tap to type">
           <div class="cnt-val">${cups}</div>
-          <div class="cnt-unit">cups ✎</div>
+          <div class="cnt-unit">cups</div>
         </div>
         <button class="cnt-btn add" onclick="stepCups(0.5)" ${S.saving?'disabled':''}>+</button>
       </div>
@@ -301,7 +301,7 @@ function renderPay() {
   const balance   = tot - teaCost;
 
   let rows = _pData.length === 0
-    ? `<div class="empty-state"><div class="empty-icon">💰</div><div class="empty-title">No payments recorded yet</div><div class="empty-sub">Tap "Add" to record a credit</div></div>`
+    ? `<div class="empty-state"><div class="empty-icon" style="font-size:48px;font-weight:800;color:var(--primary)">₹</div><div class="empty-title">No payments recorded yet</div><div class="empty-sub">Tap "Add" to record a credit</div></div>`
     : _pData.map(p => `
       <div class="pay-row">
         <div class="pay-avatar">${esc(p.name.charAt(0).toUpperCase())}</div>
