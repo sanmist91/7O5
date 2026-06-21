@@ -143,13 +143,13 @@ function renderHome() {
       <div class="today-date">${NOW.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</div>
       <div class="counter">
         <button class="cnt-btn" onclick="stepCups(-0.5)" ${cups===0||S.saving?'disabled':''}>−</button>
-        <div>
+        <div onclick="editTodayCups()" class="cnt-tap" title="Tap to type">
           <div class="cnt-val">${cups}</div>
-          <div class="cnt-unit">cups</div>
+          <div class="cnt-unit">cups ✎</div>
         </div>
         <button class="cnt-btn add" onclick="stepCups(0.5)" ${S.saving?'disabled':''}>+</button>
       </div>
-      <div class="cnt-hint">Each tap = ½ cup · Today's cost: ${formatRupees(cups*20)}</div>
+      <div class="cnt-hint">± buttons = ½ cup · tap count to type · ${formatRupees(cups*20)}/day</div>
     </div>
 
     <div class="card">
@@ -171,6 +171,30 @@ window.stepCups = async function(delta) {
   try { await setDailyLog(TODAY, next); }
   catch { alert('Failed to save. Check your connection.'); }
   finally { S.saving = false; renderHome(); }
+};
+
+window.editTodayCups = function() {
+  const cur = S.logs.find(l => l.date === TODAY)?.count ?? 0;
+  showModal(`
+    <div class="modal-title">Today's Tea</div>
+    <div class="modal-subtitle">${NOW.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</div>
+    <input class="modal-input" id="mi-count" type="number" value="${cur}" min="0" step="0.5"
+           inputmode="decimal" style="font-size:38px;font-weight:800;text-align:center;color:var(--dark);padding:14px 8px">
+    <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:6px">Use 0.5 increments (e.g. 3, 4.5, 7)</div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-save" id="mi-save" onclick="saveTodayCups()">Save</button>
+    </div>`);
+  setTimeout(() => { const inp = document.getElementById('mi-count'); inp?.select(); inp?.focus(); }, 80);
+};
+
+window.saveTodayCups = async function() {
+  const v = Math.max(0, Math.round(parseFloat(document.getElementById('mi-count').value) * 2) / 2);
+  if (isNaN(v)) { alert('Enter a valid number.'); return; }
+  const btn = document.getElementById('mi-save');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try { await setDailyLog(TODAY, v); closeModal(); }
+  catch { alert('Failed to save.'); btn.disabled = false; btn.textContent = 'Save'; }
 };
 
 // ── Daily Log ────────────────────────────────────────────
