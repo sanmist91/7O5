@@ -61,15 +61,16 @@ const TODAY    = toYMD(NOW);
 const CUR_MON  = toYM(NOW);
 
 const S = {
-  tab:        'home',
-  homeMonth:  CUR_MON,
-  logMonth:   CUR_MON,
-  payMonth:   CUR_MON,
-  logs:       [],
-  payments:   [],
-  setting:    null,
-  saving:     false,
+  tab:       'home',
+  homeMonth: CUR_MON,
+  logMonth:  CUR_MON,
+  payMonth:  CUR_MON,
+  logs:      [],
+  payments:  [],
+  setting:   null,
 };
+
+let _pendingCups = null, _cupsSaveTimer = null;
 
 let homeSubs = [], logSubs = [], paySubs = [];
 
@@ -101,9 +102,8 @@ function startHome(month) {
 }
 
 function renderHome() {
-  const logs    = S.logs;
-  const todayLg = logs.find(l => l.date === TODAY);
-  const cups    = todayLg?.count ?? 0;
+  const logs = S.logs;
+  const cups = _pendingCups ?? (logs.find(l => l.date === TODAY)?.count ?? 0);
   const total   = logs.reduce((s, l) => s + l.count, 0);
   const cost    = total * 20;
   const ob      = S.setting?.openingBalance ?? 0;
@@ -138,16 +138,15 @@ function renderHome() {
     <div class="card">
       <div class="card-hdr">
         <div class="card-title">Today's Tea</div>
-        ${S.saving ? '<span class="dot"></span>' : ''}
       </div>
       <div class="today-date">${NOW.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</div>
       <div class="counter">
-        <button class="cnt-btn" onclick="stepCups(-0.5)" ${cups===0||S.saving?'disabled':''}>−</button>
+        <button class="cnt-btn" onclick="stepCups(-0.5)" ${cups===0?'disabled':''}>−</button>
         <div onclick="editTodayCups()" class="cnt-tap" title="Tap to type">
           <div class="cnt-val">${cups}</div>
           <div class="cnt-unit">cups</div>
         </div>
-        <button class="cnt-btn add" onclick="stepCups(0.5)" ${S.saving?'disabled':''}>+</button>
+        <button class="cnt-btn add" onclick="stepCups(0.5)">+</button>
       </div>
       <div class="cnt-hint">± buttons = ½ cup · tap count to type · ${formatRupees(cups*20)}/day</div>
     </div>
@@ -163,14 +162,17 @@ function renderHome() {
     </div>`;
 }
 
-window.stepCups = async function(delta) {
-  if (S.saving) return;
-  const cur = S.logs.find(l => l.date === TODAY)?.count ?? 0;
+window.stepCups = function(delta) {
+  const cur  = _pendingCups ?? (S.logs.find(l => l.date === TODAY)?.count ?? 0);
   const next = Math.max(0, Math.round((cur + delta) * 2) / 2);
-  S.saving = true; renderHome();
-  try { await setDailyLog(TODAY, next); }
-  catch { alert('Failed to save. Check your connection.'); }
-  finally { S.saving = false; renderHome(); }
+  _pendingCups = next;
+  renderHome();
+  clearTimeout(_cupsSaveTimer);
+  _cupsSaveTimer = setTimeout(async () => {
+    try { await setDailyLog(TODAY, _pendingCups); }
+    catch { alert('Failed to save. Check your connection.'); }
+    finally { _pendingCups = null; }
+  }, 600);
 };
 
 window.editTodayCups = function() {
