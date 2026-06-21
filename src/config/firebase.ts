@@ -4,12 +4,12 @@ import { getFirestore } from 'firebase/firestore';
 // Replace these values with your own Firebase project config.
 // Go to https://console.firebase.google.com → Project Settings → Your apps → Web app config
 const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_PROJECT_ID.firebasestorage.app',
-  messagingSenderId: 'YOUR_SENDER_ID',
-  appId: 'YOUR_APP_ID',
+  apiKey: 'AIzaSyDGZDE6_dcR1SAPZxys2aeXFDwCZ5qC4l0',
+  authDomain: 'club7o5.firebaseapp.com',
+  projectId: 'club7o5',
+  storageBucket: 'club7o5.firebasestorage.app',
+  messagingSenderId: '1049265598960',
+  appId: '1:1049265598960:web:d51a48848c840a1600ed35',
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
