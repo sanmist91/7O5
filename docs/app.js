@@ -141,14 +141,14 @@ function renderHome() {
       </div>
       <div class="today-date">${NOW.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</div>
       <div class="counter">
-        <button class="cnt-btn" onclick="stepCups(-0.5)" ${cups===0?'disabled':''}>−</button>
+        <button class="cnt-btn" id="cnt-minus" onclick="stepCups(-0.5)" ${cups===0?'disabled':''}>−</button>
         <div onclick="editTodayCups()" class="cnt-tap" title="Tap to type">
-          <div class="cnt-val">${cups}</div>
+          <div class="cnt-val" id="cnt-val">${cups}</div>
           <div class="cnt-unit">cups</div>
         </div>
         <button class="cnt-btn add" onclick="stepCups(0.5)">+</button>
       </div>
-      <div class="cnt-hint">± buttons = ½ cup · tap count to type · ${formatRupees(cups*20)}/day</div>
+      <div class="cnt-hint" id="cnt-hint">± buttons = ½ cup · tap count to type · ${formatRupees(cups*20)}/day</div>
     </div>
 
     <div class="card">
@@ -166,7 +166,15 @@ window.stepCups = function(delta) {
   const cur  = _pendingCups ?? (S.logs.find(l => l.date === TODAY)?.count ?? 0);
   const next = Math.max(0, Math.round((cur + delta) * 2) / 2);
   _pendingCups = next;
-  renderHome();
+
+  // Surgical update — touch only the 3 elements that change
+  const valEl   = document.getElementById('cnt-val');
+  const hintEl  = document.getElementById('cnt-hint');
+  const minusEl = document.getElementById('cnt-minus');
+  if (valEl)   valEl.textContent = next;
+  if (hintEl)  hintEl.textContent = `± buttons = ½ cup · tap count to type · ${formatRupees(next * 20)}/day`;
+  if (minusEl) minusEl.disabled = next === 0;
+
   clearTimeout(_cupsSaveTimer);
   _cupsSaveTimer = setTimeout(async () => {
     try { await setDailyLog(TODAY, _pendingCups); }
