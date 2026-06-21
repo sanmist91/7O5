@@ -1,7 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js';
 import {
   getFirestore, collection, doc, setDoc, addDoc, deleteDoc,
-  query, where, onSnapshot, serverTimestamp
+  query, where, onSnapshot, serverTimestamp, documentId
 } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js';
 
 // ── Firebase config ──────────────────────────────────────
@@ -16,17 +16,19 @@ const _cfg = {
 const db = getFirestore(initializeApp(_cfg));
 
 // ── Utils ────────────────────────────────────────────────
-const toYMD = d => d.toISOString().slice(0, 10);
-const toYM  = d => d.toISOString().slice(0, 7);
+const toYMD = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const toYM  = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 
 function monthLabel(ym) {
   const [y, m] = ym.split('-');
   return new Date(+y, +m - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 }
-function shiftMonth(ym, d) {
-  const [y, m] = ym.split('-').map(Number);
-  const nd = new Date(y, m - 1 + d, 1);
-  return toYM(nd);
+function shiftMonth(ym, delta) {
+  let [y, m] = ym.split('-').map(Number);
+  m += delta;
+  if (m > 12) { m -= 12; y++; }
+  if (m < 1)  { m += 12; y--; }
+  return `${y}-${String(m).padStart(2, '0')}`;
 }
 function daysInMonth(ym) {
   const [y, m] = ym.split('-').map(Number);
@@ -88,11 +90,11 @@ window.switchTab = function(tab) {
 // ── Home ─────────────────────────────────────────────────
 function startHome(month) {
   unsub(homeSubs);
-  const q1 = query(collection(db, 'dailyLogs'), where('date', '>=', month+'-01'), where('date', '<=', month+'-31'));
+  const q1 = query(collection(db, 'dailyLogs'), where(documentId(), '>=', month+'-01'), where(documentId(), '<=', month+'-31'));
   const q2 = query(collection(db, 'payments'), where('month', '==', month));
   const q3 = doc(db, 'monthSettings', month);
   homeSubs.push(
-    onSnapshot(q1, snap => { S.logs = snap.docs.map(d => d.data()); renderHome(); }),
+    onSnapshot(q1, snap => { S.logs = snap.docs.map(d => ({date: d.id, ...d.data()})); renderHome(); }),
     onSnapshot(q2, snap => { S.payments = snap.docs.map(d => ({id: d.id, ...d.data()})); renderHome(); }),
     onSnapshot(q3, snap => { S.setting = snap.exists() ? snap.data() : null; renderHome(); })
   );
@@ -174,11 +176,11 @@ window.stepCups = async function(delta) {
 // ── Daily Log ────────────────────────────────────────────
 function startLog(month) {
   unsub(logSubs);
-  const q = query(collection(db, 'dailyLogs'), where('date', '>=', month+'-01'), where('date', '<=', month+'-31'));
+  const q = query(collection(db, 'dailyLogs'), where(documentId(), '>=', month+'-01'), where(documentId(), '<=', month+'-31'));
   let map = {};
   logSubs.push(onSnapshot(q, snap => {
     map = {};
-    snap.docs.forEach(d => { map[d.data().date] = d.data().count; });
+    snap.docs.forEach(d => { map[d.id] = d.data().count; });
     renderLog(map, month);
   }));
 }
