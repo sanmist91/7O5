@@ -4,6 +4,17 @@ import {
   query, where, onSnapshot, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js';
 
+// ── Firebase config ──────────────────────────────────────
+const _cfg = {
+  apiKey:            'YOUR_API_KEY',
+  authDomain:        'YOUR_PROJECT_ID.firebaseapp.com',
+  projectId:         'YOUR_PROJECT_ID',
+  storageBucket:     'YOUR_PROJECT_ID.firebasestorage.app',
+  messagingSenderId: 'YOUR_SENDER_ID',
+  appId:             'YOUR_APP_ID',
+};
+const db = getFirestore(initializeApp(_cfg));
+
 // ── Utils ────────────────────────────────────────────────
 const toYMD = d => d.toISOString().slice(0, 10);
 const toYM  = d => d.toISOString().slice(0, 7);
@@ -29,20 +40,6 @@ function formatRupees(n) {
 }
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ── Firebase ────────────────────────────────────────────
-let db;
-const CFG_KEY = 'laxmitea_cfg';
-
-function loadCfg() {
-  try { return JSON.parse(localStorage.getItem(CFG_KEY)); } catch { return null; }
-}
-function saveCfg(c) { localStorage.setItem(CFG_KEY, JSON.stringify(c)); }
-
-function initDB(cfg) {
-  const app = initializeApp(cfg);
-  db = getFirestore(app);
 }
 
 // ── Firestore CRUD ───────────────────────────────────────
@@ -115,7 +112,6 @@ function renderHome() {
         <div class="page-title">Laxmi Tea</div>
         <div class="page-month">${monthLabel(S.homeMonth)}</div>
       </div>
-      <button class="icon-btn" onclick="resetConfig()" title="Settings">⚙</button>
     </div>
 
     <div class="balance-card">
@@ -170,12 +166,6 @@ window.stepCups = async function(delta) {
   try { await setDailyLog(TODAY, next); }
   catch { alert('Failed to save. Check your connection.'); }
   finally { S.saving = false; renderHome(); }
-};
-
-window.resetConfig = function() {
-  if (!confirm('Reset Firebase connection? You will need to re-enter the config.')) return;
-  localStorage.removeItem(CFG_KEY);
-  location.reload();
 };
 
 // ── Daily Log ────────────────────────────────────────────
@@ -386,40 +376,4 @@ window.closeModal   = () => document.getElementById('modal').classList.add('hidd
 window.bgClose      = e => { if (e.target.id === 'modal') closeModal(); };
 
 // ── Boot ─────────────────────────────────────────────────
-const cfg = loadCfg();
-if (cfg?.apiKey && cfg.apiKey !== 'YOUR_API_KEY') {
-  try {
-    initDB(cfg);
-    document.getElementById('setup-screen').classList.add('hidden');
-    document.getElementById('main-app').classList.remove('hidden');
-    startHome(S.homeMonth);
-  } catch { showSetup(); }
-} else {
-  showSetup();
-}
-
-function showSetup() {
-  document.getElementById('setup-screen').classList.remove('hidden');
-  document.getElementById('main-app').classList.add('hidden');
-  document.getElementById('setup-form').onsubmit = e => {
-    e.preventDefault();
-    const pid = document.getElementById('cfg-projectId').value.trim();
-    const newCfg = {
-      apiKey:            document.getElementById('cfg-apiKey').value.trim(),
-      authDomain:        document.getElementById('cfg-authDomain').value.trim() || pid+'.firebaseapp.com',
-      projectId:         pid,
-      storageBucket:     pid+'.firebasestorage.app',
-      messagingSenderId: document.getElementById('cfg-messagingSenderId').value.trim(),
-      appId:             document.getElementById('cfg-appId').value.trim(),
-    };
-    try {
-      initDB(newCfg);
-      saveCfg(newCfg);
-      document.getElementById('setup-screen').classList.add('hidden');
-      document.getElementById('main-app').classList.remove('hidden');
-      startHome(S.homeMonth);
-    } catch(err) {
-      alert('Could not connect. Check your config.\n\n'+err.message);
-    }
-  };
-}
+startHome(S.homeMonth);
