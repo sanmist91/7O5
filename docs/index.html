@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Laxmi Tea">
+  <meta name="theme-color" content="#1B4332">
+  <title>Laxmi Tea</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── Setup Screen ── -->
+<div id="setup-screen">
+  <div class="setup-wrap">
+    <div class="setup-icon">🍵</div>
+    <h1 class="setup-title">Laxmi Tea</h1>
+    <p class="setup-sub">Enter your Firebase config to get started.<br>Get it from Firebase Console → Project Settings → Your apps → Web app.</p>
+    <form id="setup-form">
+      <div class="field"><label>API Key *</label><input id="cfg-apiKey" type="text" placeholder="AIzaSy..." required autocomplete="off"></div>
+      <div class="field"><label>Project ID *</label><input id="cfg-projectId" type="text" placeholder="your-project-id" required autocomplete="off"></div>
+      <div class="field"><label>App ID *</label><input id="cfg-appId" type="text" placeholder="1:123:web:abc" required autocomplete="off"></div>
+      <div class="field"><label>Auth Domain</label><input id="cfg-authDomain" type="text" placeholder="project.firebaseapp.com" autocomplete="off"></div>
+      <div class="field"><label>Messaging Sender ID</label><input id="cfg-messagingSenderId" type="text" placeholder="123456789" autocomplete="off"></div>
+      <button type="submit" class="btn-primary">Connect Firebase</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── Main App ── -->
+<div id="main-app" class="hidden">
+  <div id="screens-wrap">
+    <div id="screen-home"     class="screen"></div>
+    <div id="screen-log"      class="screen hidden"></div>
+    <div id="screen-payments" class="screen hidden"></div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-item" data-tab="log" onclick="switchTab('log')">
+      <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 4 3 4.9 3 6v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+      <span>Daily Log</span>
+    </button>
+    <button class="nav-item" data-tab="payments" onclick="switchTab('payments')">
+      <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+      <span>Payments</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ── Modal ── -->
+<div id="modal" class="modal-bg hidden" onclick="bgClose(event)">
+  <div class="modal-card" id="modal-card"></div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
