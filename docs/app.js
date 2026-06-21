@@ -244,14 +244,19 @@ function renderLog(map, month) {
       <button class="mnav-btn" onclick="shiftLog(-1)">‹</button>
       <div class="mnav-center">
         <div class="mnav-label">${monthLabel(month)}</div>
-        <div class="mnav-sub">Daily Log</div>
+        <div class="mnav-sub">
+          ${isCur
+            ? 'Daily Log'
+            : `<button class="mnav-today-btn" onclick="jumpLogToNow()">This month →</button>`}
+        </div>
       </div>
       <button class="mnav-btn" onclick="shiftLog(1)" ${isCur?'disabled':''}>›</button>
     </div>
     ${rows}`;
 }
 
-window.shiftLog = function(d) { S.logMonth = shiftMonth(S.logMonth, d); startLog(S.logMonth); };
+window.shiftLog     = d  => { S.logMonth = shiftMonth(S.logMonth, d); startLog(S.logMonth); };
+window.jumpLogToNow = () => { S.logMonth = CUR_MON; startLog(CUR_MON); };
 
 window.editLog = function(date, cur) {
   const lbl = new Date(date+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
@@ -330,7 +335,11 @@ function renderPay() {
       <button class="mnav-btn" onclick="shiftPay(-1)">‹</button>
       <div class="mnav-center">
         <div class="mnav-label">${monthLabel(month)}</div>
-        <div class="mnav-sub">Payments & Credits</div>
+        <div class="mnav-sub">
+          ${isCur
+            ? 'Payments & Credits'
+            : `<button class="mnav-today-btn" onclick="jumpPayToNow()">This month →</button>`}
+        </div>
       </div>
       <button class="mnav-btn" onclick="shiftPay(1)" ${isCur?'disabled':''}>›</button>
     </div>
@@ -371,7 +380,8 @@ function renderPay() {
     ${rows}`;
 }
 
-window.shiftPay  = d => { S.payMonth = shiftMonth(S.payMonth, d); startPay(S.payMonth); };
+window.shiftPay      = d  => { S.payMonth = shiftMonth(S.payMonth, d); startPay(S.payMonth); };
+window.jumpPayToNow  = () => { S.payMonth = CUR_MON; startPay(CUR_MON); };
 
 window.openAddPay = () => {
   const chips = [...MEMBERS, 'Other…'].map(m =>
