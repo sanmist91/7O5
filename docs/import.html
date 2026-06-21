@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Import Historical Data</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #F0F7F4; color: #1b1b1b; min-height: 100dvh;
+      max-width: 480px; margin: 0 auto; padding: 24px 20px;
+    }
+    h1 { font-size: 24px; font-weight: 800; color: #1B4332; margin-bottom: 6px; }
+    .sub { font-size: 13px; color: #52796F; margin-bottom: 24px; line-height: 1.5; }
+    .stats {
+      background: #fff; border-radius: 16px; padding: 18px;
+      margin-bottom: 20px; box-shadow: 0 2px 8px rgba(27,67,50,0.07);
+    }
+    .stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #E8F5E9; font-size: 15px; }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-row strong { color: #1B4332; }
+    .btn {
+      width: 100%; padding: 16px; border: none; border-radius: 14px;
+      font-size: 17px; font-weight: 700; cursor: pointer; margin-bottom: 12px;
+    }
+    .btn-import { background: #2D6A4F; color: #fff; }
+    .btn-import:disabled { opacity: 0.5; cursor: default; }
+    .btn-clear { background: #fff; color: #EF4444; border: 1.5px solid #EF4444; }
+    .btn-clear:disabled { opacity: 0.5; cursor: default; }
+    #log {
+      background: #fff; border-radius: 16px; padding: 16px;
+      max-height: 320px; overflow-y: auto;
+      font-size: 13px; line-height: 1.7; color: #374151;
+      box-shadow: 0 2px 8px rgba(27,67,50,0.07);
+      white-space: pre-wrap; font-family: monospace;
+      display: none;
+    }
+    .done { color: #2D6A4F; font-weight: 700; font-size: 16px; margin-top: 16px; text-align: center; }
+    .warn { background: #FFF3CD; border: 1px solid #FFC107; border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: #856404; }
+  </style>
+</head>
+<body>
+  <h1>🍵 Import Historical Data</h1>
+  <p class="sub">This page imports Jan–Jun 2026 data from the Excel file into Firebase. Run it once, then close it.</p>
+
+  <div class="warn">⚠️ Only tap Import once. If you run it again, duplicate data may appear in the app.</div>
+
+  <div class="stats">
+    <div class="stat-row"><span>Daily Logs</span><strong id="cnt-logs">loading…</strong></div>
+    <div class="stat-row"><span>Payments</span><strong id="cnt-payments">loading…</strong></div>
+    <div class="stat-row"><span>Month Settings</span><strong id="cnt-settings">loading…</strong></div>
+  </div>
+
+  <button class="btn btn-import" id="btn-import" disabled>Import All Data</button>
+  <button class="btn btn-clear" id="btn-clear" disabled>Clear All Imported Data</button>
+
+  <div id="log"></div>
+  <div id="done" class="done" style="display:none">✅ Import complete! You can close this page.</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js';
+import {
+  getFirestore, doc, setDoc, addDoc, collection,
+  getDocs, deleteDoc, query, where
+} from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js';
+
+const _cfg = {
+  apiKey:            'AIzaSyDGZDE6_dcR1SAPZxys2aeXFDwCZ5qC4l0',
+  authDomain:        'club7o5.firebaseapp.com',
+  projectId:         'club7o5',
+  storageBucket:     'club7o5.firebasestorage.app',
+  messagingSenderId: '1049265598960',
+  appId:             '1:1049265598960:web:d51a48848c840a1600ed35',
+};
+const db = getFirestore(initializeApp(_cfg));
+
+const logEl  = document.getElementById('log');
+const doneEl = document.getElementById('done');
+const btnImport = document.getElementById('btn-import');
+const btnClear  = document.getElementById('btn-clear');
+
+function log(msg) {
+  logEl.style.display = 'block';
+  logEl.textContent += msg + '\n';
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// Load JSON
+const data = await fetch('./import-data.json').then(r => r.json());
+document.getElementById('cnt-logs').textContent     = data.dailyLogs.length;
+document.getElementById('cnt-payments').textContent = data.payments.length;
+document.getElementById('cnt-settings').textContent = data.monthSettings.length;
+btnImport.disabled = false;
+btnClear.disabled  = false;
+
+btnImport.addEventListener('click', async () => {
+  if (!confirm(`Import ${data.dailyLogs.length} daily logs, ${data.payments.length} payments, and ${data.monthSettings.length} month settings into Firebase?`)) return;
+  btnImport.disabled = true;
+  btnClear.disabled  = true;
+
+  try {
+    log('--- Importing Daily Logs ---');
+    for (const row of data.dailyLogs) {
+      await setDoc(doc(db, 'dailyLogs', row.date), { count: row.count });
+      log(`  ✓ ${row.date}  ${row.count} cups`);
+    }
+
+    log('\n--- Importing Payments ---');
+    for (const p of data.payments) {
+      await addDoc(collection(db, 'payments'), {
+        name:   p.name,
+        amount: p.amount,
+        month:  p.month,
+        note:   p.note || '',
+        date:   p.date || p.month + '-01',
+      });
+      log(`  ✓ ${p.month}  ${p.name}  ₹${p.amount}`);
+    }
+
+    log('\n--- Importing Month Settings ---');
+    for (const s of data.monthSettings) {
+      await setDoc(doc(db, 'monthSettings', s.month), {
+        teaPrice:       s.teaPrice       ?? 20,
+        openingBalance: s.openingBalance ?? 0,
+      });
+      log(`  ✓ ${s.month}  opening ₹${s.openingBalance}  price ₹${s.teaPrice}`);
+    }
+
+    log('\n✅ All done!');
+    doneEl.style.display = 'block';
+  } catch (err) {
+    log('\n❌ Error: ' + err.message);
+    btnImport.disabled = false;
+    btnClear.disabled  = false;
+  }
+});
+
+btnClear.addEventListener('click', async () => {
+  const months = data.monthSettings.map(s => s.month);
+  if (!confirm(`This will delete all daily logs and payments for Jan–Jun 2026 from Firebase. Continue?`)) return;
+  btnImport.disabled = true;
+  btnClear.disabled  = true;
+  try {
+    log('--- Clearing Daily Logs ---');
+    for (const row of data.dailyLogs) {
+      await deleteDoc(doc(db, 'dailyLogs', row.date));
+      log(`  ✗ deleted ${row.date}`);
+    }
+    log('\n--- Clearing Month Settings ---');
+    for (const s of data.monthSettings) {
+      await deleteDoc(doc(db, 'monthSettings', s.month));
+      log(`  ✗ deleted ${s.month}`);
+    }
+    log('\n--- Clearing Payments (by month) ---');
+    for (const m of months) {
+      const snap = await getDocs(query(collection(db, 'payments'), where('month', '==', m)));
+      for (const d of snap.docs) {
+        await deleteDoc(d.ref);
+        log(`  ✗ deleted payment ${d.id}`);
+      }
+    }
+    log('\n✅ Clear done. You can now re-import.');
+    btnImport.disabled = false;
+    btnClear.disabled  = false;
+  } catch (err) {
+    log('\n❌ Error: ' + err.message);
+    btnImport.disabled = false;
+    btnClear.disabled  = false;
+  }
+});
+</script>
+</body>
+</html>
