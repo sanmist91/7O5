@@ -267,12 +267,13 @@ window.saveLog = async function(date) {
 };
 
 // ── Payments ─────────────────────────────────────────────
-let _pData = [], _pSet = null;
+let _pData = [], _pSet = null, _pLogs = [];
 
 function startPay(month) {
   unsub(paySubs);
-  _pData = []; _pSet = null;
-  const q = query(collection(db, 'payments'), where('month', '==', month));
+  _pData = []; _pSet = null; _pLogs = [];
+  const q    = query(collection(db, 'payments'), where('month', '==', month));
+  const qLog = query(collection(db, 'dailyLogs'), where(documentId(), '>=', month+'-01'), where(documentId(), '<=', month+'-31'));
   paySubs.push(
     onSnapshot(q, snap => {
       _pData = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date.localeCompare(b.date));
@@ -281,16 +282,23 @@ function startPay(month) {
     onSnapshot(doc(db, 'monthSettings', month), snap => {
       _pSet = snap.exists() ? snap.data() : null;
       renderPay();
+    }),
+    onSnapshot(qLog, snap => {
+      _pLogs = snap.docs.map(d => d.data());
+      renderPay();
     })
   );
 }
 
 function renderPay() {
-  const month = S.payMonth;
-  const isCur = month === CUR_MON;
-  const ob    = _pSet?.openingBalance ?? 0;
-  const nc    = _pData.reduce((s,p)=>s+p.amount, 0);
-  const tot   = nc + ob;
+  const month     = S.payMonth;
+  const isCur     = month === CUR_MON;
+  const ob        = _pSet?.openingBalance ?? 0;
+  const nc        = _pData.reduce((s,p)=>s+p.amount, 0);
+  const tot       = nc + ob;
+  const totalCups = _pLogs.reduce((s,l) => s + (l.count||0), 0);
+  const teaCost   = totalCups * 20;
+  const balance   = tot - teaCost;
 
   let rows = _pData.length === 0
     ? `<div class="empty-state"><div class="empty-icon">💰</div><div class="empty-title">No payments recorded yet</div><div class="empty-sub">Tap "Add" to record a credit</div></div>`
@@ -334,6 +342,16 @@ function renderPay() {
       <div class="sum-total">
         <span class="sum-total-lbl">Total Credited</span>
         <span class="sum-total-val">${formatRupees(tot)}</span>
+      </div>
+      <div class="sum-balance">
+        <div class="sum-bal-row">
+          <span class="sum-bal-lbl">Tea Cost (${totalCups} cups)</span>
+          <span class="sum-bal-cost">${formatRupees(teaCost)}</span>
+        </div>
+        <div class="sum-bal-row sum-bal-main">
+          <span class="sum-bal-lbl">Balance</span>
+          <span class="sum-bal-val${balance < 0 ? ' neg' : ''}">${formatRupees(balance)}</span>
+        </div>
       </div>
     </div>
     <div class="sec-hdr">
