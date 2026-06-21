@@ -1,12 +1,13 @@
 :root {
-  --primary: #2D6A4F;
-  --dark:    #1B4332;
-  --light:   #D8F3DC;
-  --bg:      #F0F7F4;
-  --muted:   #52796F;
+  --primary: #E8192C;
+  --dark:    #8B0000;
+  --light:   #FFF3CD;
+  --bg:      #FFF9F0;
+  --muted:   #9E4A1E;
   --gray:    #9CA3AF;
-  --border:  #E8F5E9;
+  --border:  #FFE0B2;
   --red:     #EF4444;
+  --gold:    #F5C518;
   --nav:     68px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -94,16 +95,16 @@ body {
 /* ── Balance Card ── */
 .balance-card {
   margin: 16px; border-radius: 20px; padding: 22px 22px 20px;
-  background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%);
+  background: linear-gradient(135deg, #8B0000 0%, #E8192C 100%);
   color: #fff;
 }
-.bal-lbl    { font-size: 13px; color: #B7E4C7; font-weight: 500; }
+.bal-lbl    { font-size: 13px; color: #FFD5A0; font-weight: 500; }
 .bal-amount { font-size: 42px; font-weight: 800; margin: 4px 0 20px; letter-spacing: -1px; line-height: 1; }
 .bal-amount.neg { color: #FF8A80; }
 .bal-row    { display: flex; }
 .bal-stat   { flex: 1; text-align: center; }
 .bal-divider{ width: 1px; background: rgba(255,255,255,0.2); margin: 0 4px; align-self: stretch; }
-.bal-stat-lbl { font-size: 12px; color: #B7E4C7; margin-bottom: 4px; }
+.bal-stat-lbl { font-size: 12px; color: #FFD5A0; margin-bottom: 4px; }
 .bal-stat-val { font-size: 17px; font-weight: 700; }
 
 /* ── Card ── */
@@ -159,7 +160,7 @@ body {
   border-bottom: 1px solid var(--border); cursor: pointer;
 }
 .log-row:active { background: var(--bg); }
-.log-row.today  { background: #f0fff4; }
+.log-row.today  { background: #fff8f0; }
 .log-day-name   { font-size: 15px; font-weight: 600; color: var(--dark); }
 .log-row.today .log-day-name { color: var(--primary); }
 .log-day-date   { font-size: 12px; color: var(--muted); margin-top: 2px; }
@@ -251,3 +252,16 @@ body {
   font-size: 16px; font-weight: 700; cursor: pointer;
 }
 .modal-save:disabled { opacity: 0.6; cursor: default; }
+
+/* ── Member Chips ── */
+.member-chips {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px;
+}
+.member-chip {
+  padding: 8px 14px; border-radius: 20px;
+  border: 1.5px solid var(--primary); background: #fff;
+  color: var(--primary); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.member-chip.selected { background: var(--primary); color: #fff; }
+.member-chip:active { opacity: 0.8; }

@@ -42,6 +42,9 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── Members ──────────────────────────────────────────────
+const MEMBERS = ['NK','HK','Ronak','Mota','Punit','Dr Nimesh','SKD','Nachi','Viren','Kapoor','Sanket','Paji','Vishal'];
+
 // ── Firestore CRUD ───────────────────────────────────────
 const setDailyLog   = (date, count) =>
   setDoc(doc(db, 'dailyLogs', date), { date, count, updatedAt: serverTimestamp() });
@@ -109,7 +112,7 @@ function renderHome() {
   document.getElementById('screen-home').innerHTML = `
     <div class="page-hdr">
       <div>
-        <div class="page-title">Laxmi Tea</div>
+        <div class="page-title">Club 7o5 ☀️</div>
         <div class="page-month">${monthLabel(S.homeMonth)}</div>
       </div>
     </div>
@@ -317,23 +320,46 @@ function renderPay() {
 window.shiftPay  = d => { S.payMonth = shiftMonth(S.payMonth, d); startPay(S.payMonth); };
 
 window.openAddPay = () => {
+  const chips = [...MEMBERS, 'Other…'].map(m =>
+    `<button class="member-chip" onclick="selectMember(this,'${m}')">${m}</button>`
+  ).join('');
   showModal(`
     <div class="modal-title">Add Credit</div>
-    <div class="modal-label">Person's Name</div>
-    <input class="modal-input" id="mi-name" type="text" placeholder="e.g. NK, Ronak, HK" autocomplete="off">
+    <div class="modal-subtitle">Tap a name · enter amount · save</div>
+    <div class="member-chips">${chips}</div>
+    <input id="mi-name" type="hidden" value="">
+    <div id="mi-other-wrap" style="display:none">
+      <div class="modal-label">Name</div>
+      <input class="modal-input" id="mi-name-text" type="text" placeholder="Enter name" autocomplete="off">
+    </div>
     <div class="modal-label">Amount (₹)</div>
-    <input class="modal-input" id="mi-amt" type="number" placeholder="e.g. 1000" inputmode="numeric">
+    <input class="modal-input" id="mi-amt" type="number" placeholder="e.g. 500" inputmode="numeric">
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModal()">Cancel</button>
       <button class="modal-save" id="mi-save" onclick="savePay()">Add</button>
     </div>`);
-  setTimeout(() => document.getElementById('mi-name')?.focus(), 80);
+};
+
+window.selectMember = (el, name) => {
+  document.querySelectorAll('.member-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const wrap = document.getElementById('mi-other-wrap');
+  if (name === 'Other…') {
+    wrap.style.display = 'block';
+    document.getElementById('mi-name').value = '';
+    setTimeout(() => document.getElementById('mi-name-text')?.focus(), 50);
+  } else {
+    wrap.style.display = 'none';
+    document.getElementById('mi-name').value = name;
+    setTimeout(() => document.getElementById('mi-amt')?.focus(), 50);
+  }
 };
 
 window.savePay = async () => {
-  const name = document.getElementById('mi-name').value.trim();
-  const amt  = parseFloat(document.getElementById('mi-amt').value);
-  if (!name)              { alert('Enter a name.'); return; }
+  let name = document.getElementById('mi-name')?.value.trim();
+  if (!name) name = document.getElementById('mi-name-text')?.value.trim() || '';
+  const amt = parseFloat(document.getElementById('mi-amt')?.value);
+  if (!name)              { alert('Select a member or enter a name.'); return; }
   if (isNaN(amt)||amt<=0) { alert('Enter a valid amount.'); return; }
   const btn = document.getElementById('mi-save');
   btn.disabled = true; btn.textContent = 'Saving…';
