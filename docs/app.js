@@ -45,7 +45,7 @@ function esc(s) {
 }
 
 // ── Members ──────────────────────────────────────────────
-const MEMBERS = ['NK','HK','Ronak','Mota','Punit','Dr Nimesh','SKD','Nachi','Viren','Kapoor','Sanket','Paji','Vishal'];
+const MEMBERS = ['NK','HK','Ronak','Mota','Punit','Dr Nimesh','SKD','Nachi','Viren','Kapoor','Sanket','Paji','Vishal','Prabhu','Nilesh','Bathiyo'];
 
 // ── Firestore CRUD ───────────────────────────────────────
 const setDailyLog   = (date, count) =>
